@@ -1,0 +1,1 @@
+// openapi generation script placeholder

@@ -68,19 +68,19 @@ function GameInner() {
   // --- NEW: Normalize question shape safely (handles question.body.*) ---
   const qText = useMemo(() => {
     // prefer top-level .text; fallback to body.text; fallback to empty
-    // @ts-ignore – body may not exist on the typed shape
+    // @ts-expect-error – body may not exist on the typed shape
     return question?.text ?? question?.body?.text ?? "";
   }, [question]);
 
   const qOptions = useMemo(() => {
     // prefer top-level .options; fallback to body.options; always return an array
-    // @ts-ignore – body may not exist on the typed shape
+    // @ts-expect-error – body may not exist on the typed shape
     const opts = question?.options ?? question?.body?.options;
     return Array.isArray(opts) ? opts : [];
   }, [question]);
 
   const stageLabel = useMemo(() => {
-    // @ts-ignore – stage might be number in some responses; keep fallback
+    // stage might be number in some responses; keep fallback
     const key = (question?.stage as string) ?? "basic";
     return STAGE_LABELS[key] ?? "Stage";
   }, [question]);

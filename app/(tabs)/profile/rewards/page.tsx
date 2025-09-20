@@ -7,7 +7,10 @@ import { Text } from "@components/design-system/atoms/Text";
 import { Button } from "@components/design-system/atoms/Button";
 import { RewardSummaryCard } from "@components/rewards/RewardSummary";
 import { PayoutHistoryList } from "@components/rewards/PayoutHistoryList";
-import { useMyRewardsSummary, useMyPayoutHistory } from "@features/rewards/hooks/use-rewards";
+import {
+  useMyRewardsSummary,
+  useMyPayoutHistory,
+} from "@features/rewards/hooks/use-rewards";
 import { Protected } from "@components/guards/Protected";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -24,7 +27,12 @@ export default function RewardsPage() {
 
 function RewardsInner() {
   const router = useRouter();
-  const { data: summary, isLoading: summaryLoading, isError: summaryErr, error: summaryErrObj } = useMyRewardsSummary();
+  const {
+    data: summary,
+    isLoading: summaryLoading,
+    isError: summaryErr,
+    error: summaryErrObj,
+  } = useMyRewardsSummary();
   const {
     data: historyPages,
     isLoading: historyLoading,
@@ -37,8 +45,8 @@ function RewardsInner() {
 
   // MiniKit context (optional UI touch, never for auth)
   let fid: string | undefined = undefined;
+  const { context } = useMiniKit();
   try {
-    const { context } = useMiniKit();
     fid = context?.user?.fid ? String(context.user.fid) : undefined;
   } catch {
     // library not present or not in Mini App; ignore
@@ -53,7 +61,11 @@ function RewardsInner() {
     try {
       if (ref.type === "onchain") {
         // Base explorer deep link (user can change if your backend returns network)
-        window.open(`https://basescan.org/tx/${ref.id}`, "_blank", "noopener,noreferrer");
+        window.open(
+          `https://basescan.org/tx/${ref.id}`,
+          "_blank",
+          "noopener,noreferrer"
+        );
       } else {
         // Custodial (Circle) — you might have a dashboard link pattern; for now, copy ID
         navigator.clipboard.writeText(ref.id);
@@ -70,37 +82,60 @@ function RewardsInner() {
         <div className="flex items-end justify-between">
           <div>
             <Heading level={1}>Rewards</Heading>
-            {fid && <Text tone="muted" size="sm">f/{fid}</Text>}
+            {fid && (
+              <Text tone="muted" size="sm">
+                f/{fid}
+              </Text>
+            )}
           </div>
-          <Button variant="outline" onClick={() => router.push("/leaderboard")}>Leaderboard</Button>
+          <Button variant="outline" onClick={() => router.push("/leaderboard")}>
+            Leaderboard
+          </Button>
         </div>
 
         {summaryLoading ? (
           <div className="h-40 animate-pulse rounded-2xl bg-white shadow-card" />
         ) : summaryErr ? (
           <div className="rounded-2xl border border-line bg-white p-4 shadow-card">
-            <Text tone="danger">Failed to load summary: {summaryErrObj?.message}</Text>
+            <Text tone="danger">
+              Failed to load summary: {summaryErrObj?.message}
+            </Text>
           </div>
         ) : summary ? (
           <RewardSummaryCard
             data={summary}
             onViewLeaderboard={() => router.push("/leaderboard")}
-            onViewTx={(id) => openRef({ type: summary.payoutRef?.type === "onchain" ? "onchain" : "custodial", id })}
+            onViewTx={(id) =>
+              openRef({
+                type:
+                  summary.payoutRef?.type === "onchain"
+                    ? "onchain"
+                    : "custodial",
+                id,
+              })
+            }
           />
         ) : null}
 
         <div className="mt-2">
-          <Heading level={3} className="mb-2">History</Heading>
+          <Heading level={3} className="mb-2">
+            History
+          </Heading>
 
           {historyLoading ? (
             <div className="space-y-2">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-16 animate-pulse rounded-2xl bg-white shadow-card" />
+                <div
+                  key={i}
+                  className="h-16 animate-pulse rounded-2xl bg-white shadow-card"
+                />
               ))}
             </div>
           ) : historyErr ? (
             <div className="rounded-2xl border border-line bg-white p-4 shadow-card">
-              <Text tone="danger">Failed to load history: {historyErrObj?.message}</Text>
+              <Text tone="danger">
+                Failed to load history: {historyErrObj?.message}
+              </Text>
             </div>
           ) : (
             <>

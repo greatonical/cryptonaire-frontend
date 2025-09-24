@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSessionStore } from "@lib/store/session.store";
 
@@ -13,6 +13,10 @@ export default function Page() {
     if (jwt) router.replace("/home");
     else router.replace("/signin");
   }, [jwt, router]);
+
+  useLayoutEffect(() => {
+    import("eruda").then((eruda) => eruda.default.init());
+  }, []);
 
   // Tiny splash while we redirect
   return (

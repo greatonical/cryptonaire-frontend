@@ -15,7 +15,7 @@ import { Card } from "@components/design-system/molecules/Card";
 import { Button } from "@components/design-system/atoms/Button";
 import { CryptonaireIcon } from "@components/design-system/atoms/Icon";
 import Lottie from "lottie-react";
-import BackgroundAnimation from "@assets/animations/intro-bg-anim.json"
+import BackgroundAnimation from "@assets/animations/intro-bg-anim.json";
 
 export default function SignInPage() {
   const router = useRouter();
@@ -52,9 +52,7 @@ export default function SignInPage() {
       if (!address) throw new Error("No wallet connected");
       const { nonce } = await getSiweChallenge(address);
       const domain = window.location.host;
-      const uri = window.location.origin;
-      // const domain = window.location.host;
-      // const uri = window.location.origin;
+      const uri = window.location.origin.replace(/\/$/, ""); // normalize like server
       const message = buildSiweMessage({ domain, address, uri, chainId, nonce });
       const signature = (await signMessageAsync({ message })) as `0x${string}`;
       const { jwt } = await verifySiwe({ message, signature, address });
@@ -72,7 +70,7 @@ export default function SignInPage() {
     <Screen>
       <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-6 px-4">
         <div className="w-full flex flex-col items-center space-y-2 text-center">
-          <CryptonaireIcon className="w-14 h-14"/>
+          <CryptonaireIcon className="w-14 h-14" />
           <Heading level={1}>Welcome to Cryptonaire</Heading>
           <Text tone="muted">Connect your wallet to get started.</Text>
         </div>
@@ -85,7 +83,7 @@ export default function SignInPage() {
           <div className="w-full space-y-3 z-10">
             <Card>
               <Text size="sm">
-                Connected as <span className="font-mono">{`${address?.slice(0,28)}...`}</span>
+                Connected as <span className="font-mono">{`${address?.slice(0, 28)}...`}</span>
               </Text>
             </Card>
 
@@ -98,9 +96,8 @@ export default function SignInPage() {
           </div>
         )}
 
-        <Lottie className="self-center absolute opacity-50" animationData={BackgroundAnimation} loop={true} />
+        <Lottie className="self-center absolute opacity-50" animationData={BackgroundAnimation} loop />
       </div>
-      
     </Screen>
   );
 }

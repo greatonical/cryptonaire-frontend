@@ -1,3 +1,5 @@
+import { SiweMessage } from "siwe";
+
 export function buildSiweMessage(params: {
   domain: string;
   address: `0x${string}`;
@@ -19,14 +21,16 @@ export function buildSiweMessage(params: {
     issuedAt = new Date().toISOString(),
   } = params;
 
-  return `${domain} wants you to sign in with your Ethereum account:
-${address}
+  const m = new SiweMessage({
+    domain,
+    address,
+    statement,
+    uri,
+    version,
+    chainId,
+    nonce,
+    issuedAt,
+  });
 
-${statement}
-
-URI: ${uri}
-Version: ${version}
-Chain ID: ${chainId}
-Nonce: ${nonce}
-Issued At: ${issuedAt}`;
+  return m.prepareMessage(); // canonical EIP-4361 string
 }

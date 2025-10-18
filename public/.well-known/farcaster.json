@@ -1,8 +1,6 @@
 {
   "accountAssociation": {
-    "header": "eyJmaWQiOjk1NTkzOCwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweDdEMGU5QzcxNTZENzgyZkRjQjFDMTU5MWFmQjg1MTQ5NDE0MEZEYTQifQ",
-    "payload": "eyJkb21haW4iOiJuZG9sbGFyLm9yZyJ9",
-    "signature": "MHg3YmYyNDgzZjZkMDFmM2Y1OWE4MDU3MWRkNjg1NDBiN2E1OGIyMzg3MGY1ZGVjZGY5NTc2YzY0YjA3YzU2NDYzMmU0Nzk0ZjBlYWExMDgxN2JhNzdhNzAyMTk4Y2VlY2MzNTJjNzI4YTg4YjA1Y2QwYzk3MjlhZWE1MDk2ZGI3ZDFj"
+  
   },
   "miniapp": {
     "version": "1",
@@ -11,12 +9,12 @@
     "iconUrl": "https://www.cryptonaire.fun/icon-caster.png",
     "imageUrl": "https://www.cryptonaire.fun/image.png",
     "splashImageUrl": "https://www.cryptonaire.fun/splash.png",
-    "splashBackgroundColor": "#1C293C",
+    "splashBackgroundColor": "#3C6FFF",
 
     "webhookUrl": "https://www.cryptonaire.fun/api/webhook",
     "primaryCategory": "games",
-    "description": "The N-DOLLAR Platform is a comprehensive ecosystem that combines automated trading, coin creation, and DAO management",
-    "subtitle": "Launch Your Impact Coin",
+    "description": "Cryptonaire allows you to earn by learning. ",
+    "subtitle": "The game for knowledge",
 
     "heroImageUrl": "https://www.cryptonaire.fun/hero.png",
     "ogImageUrl": "https://www.cryptonaire.fun/og-image.png",

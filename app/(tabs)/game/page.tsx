@@ -120,18 +120,17 @@ useEffect(() => {
 
   // Normalize question shape safely (handles question.body.*)
   const qText = useMemo(() => {
-    // @ts-ignore
+    // @ts-expect-error
     return question?.text ?? question?.body?.text ?? "";
   }, [question]);
 
   const qOptions = useMemo(() => {
-    // @ts-ignore
+    // @ts-expect-error
     const opts = question?.options ?? question?.body?.options;
     return Array.isArray(opts) ? opts : [];
   }, [question]);
 
   const stageLabel = useMemo(() => {
-    // @ts-ignore
     const key = (question?.stage as string) ?? "basic";
     return STAGE_LABELS[key] ?? "Stage";
   }, [question]);

@@ -7,7 +7,8 @@ export type LeaderboardRow = {
   username?: string | null;
   walletAddress: `0x${string}`;
   fid?: string | null;
-  points: number;          // weekly points OR all-time points based on endpoint
+  points?: number;          // weekly points OR all-time points based on endpoint
+  score: number;          // weekly points OR all-time points based on endpoint
   avatarUrl?: string | null;
   country?: string | null;
 };

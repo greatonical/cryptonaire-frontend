@@ -1,18 +1,75 @@
 @import "tailwindcss";
 @config "../tailwind.config.ts";
 
+/* app/globals.css */
+
+@import "tailwindcss";
+@config "../tailwind.config.ts";
+
+/* REGISTER TAILWIND V4 THEME TOKENS */
+@theme {
+  /* semantic neutrals */
+  --color-background: rgb(var(--c-bg));
+  --color-surface: rgb(var(--c-surface));
+  --color-line: rgb(var(--c-line));
+  --color-ink-900: rgb(var(--c-ink-900));
+  --color-ink-600: rgb(var(--c-ink-600));
+
+  /* (optional) brand/accent if you want tokens available here, too: */
+  --color-brand-50:  #EEF3FF;
+  --color-brand-100: #DEE7FF;
+  --color-brand-200: #C5D5FF;
+  --color-brand-300: #A9BFFF;
+  --color-brand-400: #7F99FF;
+  --color-brand-500: #5B7FFF;
+  --color-brand-600: #3C6FFF;
+  --color-brand-700: #2E56CC;
+  --color-brand-800: #2443A3;
+  --color-brand-900: #1C347F;
+  --color-brand-primary: #3C6FFF;
+
+  --color-accent-mint: #24D6A5;
+  --color-accent-sun:  #FFB020;
+}
+
 :root {
   --radius-xl: 20px;
   --radius-2xl: 28px;
   --shadow-card: 0 10px 30px rgba(16, 24, 40, 0.08);
+  --c-bg: 246 247 251; /* #F6F7FB */
+  --c-surface: 255 255 255; /* white */
+  --c-line: 231 234 241; /* #E7EAF1 */
+  --c-ink-900: 15 23 42; /* #0F172A */
+  --c-ink-600: 71 85 105; /* #475569 */
 }
 
-html, body { height: 100%; background: #f6f7fb; }
+/* Dark theme overrides */
+.dark {
+  --c-bg:        12 16 22;      /* page background */
+  --c-surface:   22 27 34;      /* card surfaces */
+  --c-line:      46 54 66;      /* separators */
+  --c-ink-900:   241 245 249;   /* primary text */
+  --c-ink-600:   203 213 225;   /* secondary text */
+}
+
+.dark .bg-white { background-color: rgb(var(--c-surface)) !important; }
+
+html,
+body {
+  height: 100%;
+  /* background: #f6f7fb; */
+    background-color: rgb(var(--c-bg));
+  color: rgb(var(--c-ink-900));
+}
 
 /* Base types & tap behavior */
 @layer base {
-  * { -webkit-tap-highlight-color: transparent; }
-  body { @apply font-sans bg-background text-ink-900; }
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply font-sans bg-background text-ink-900;
+  }
 }
 
 /* body {

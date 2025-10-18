@@ -6,11 +6,16 @@ import { Heading } from "@components/design-system/atoms/Heading";
 import { Text } from "@components/design-system/atoms/Text";
 import { Switch } from "@components/design-system/atoms/Switch";
 import { Protected } from "@components/guards/Protected";
-import { useState } from "react";
+import { useUIStore } from "@lib/store/ui.store";
 
 export default function SettingsPage() {
-  const [notif, setNotif] = useState(true);
-  const [dark, setDark] = useState(false);
+  // Keep notif local or wire to a store later if needed
+  const notif = true;
+  const setNotif = () => {};
+
+  const theme = useUIStore((s) => s.theme);
+  const setTheme = useUIStore((s) => s.setTheme);
+  const isDark = theme === "dark";
 
   return (
     <Protected>
@@ -33,7 +38,10 @@ export default function SettingsPage() {
               <div className="text-[15px] font-medium text-ink-900">Dark mode</div>
               <Text tone="muted" size="sm">Softer colors at night</Text>
             </div>
-            <Switch checked={dark} onChange={setDark} />
+            <Switch
+              checked={isDark}
+              onChange={(v) => setTheme(v ? "dark" : "light")}
+            />
           </Card>
         </div>
       </Screen>

@@ -21,10 +21,12 @@ export const API = {
     walkAway: "/game/session/walk-away",
     continue: "/game/session/continue",
     end: "/game/session/end",
+    resetPoints: "/game/session/reset-points",
   },
   leaderboard: {
     weekly: "/leaderboard/weekly",
     alltime: "/leaderboard/alltime",
+    me: "/leaderboard/me",
   },
   profile: {
     me: "/me/profile",

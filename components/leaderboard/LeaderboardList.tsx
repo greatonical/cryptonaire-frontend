@@ -58,14 +58,14 @@ export function LeaderboardList({
             </div>
 
             <div className="flex-1">
-              <div className="text-[15px] font-medium text-ink-900 truncate">{name}</div>
+              <div className="text-[15px] font-medium text-ink-900 truncate">{row.username ?? `${row.userId.slice(0,6)}...`}</div>
               {row.country && (
                 <Text size="sm" tone="muted">{row.country}</Text>
               )}
             </div>
 
             <div className="shrink-0 text-right">
-              <div className="text-[15px] font-semibold text-ink-900">{row.points}</div>
+              <div className="text-[15px] font-semibold text-ink-900">{row.score}</div>
               <Text size="xs" tone="muted">pts</Text>
             </div>
           </Card>

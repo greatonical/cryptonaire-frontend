@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Screen } from "@components/design-system/layout/Screen";
 import { Heading } from "@components/design-system/atoms/Heading";
 import { Text } from "@components/design-system/atoms/Text";
@@ -30,6 +30,9 @@ export default function LeaderboardPage() {
   //   const userId = useSessionStore((s) => s.userId); // optional: highlight current user
   const highlightAddress = useSessionStore((s) => s.address) ?? undefined;
 
+  useEffect(()=>{
+    console.log("items",items)
+  },[items])
   return (
     <Screen>
       <div className="mx-auto max-w-md space-y-4 p-4">
@@ -73,7 +76,7 @@ export default function LeaderboardPage() {
 
         {!isLoading && !isError && (
           <>
-            {items.length > 1 ? (
+            {items.length > 0 ? (
               <LeaderboardList
                 rows={items}
                 highlightAddress={highlightAddress}

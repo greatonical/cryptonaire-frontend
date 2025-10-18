@@ -1,12 +1,11 @@
+// services/game.client.ts
 import { http } from "@lib/api-client";
 import { API } from "@lib/endpoints";
 
-// cache for attempt
 let lastAttemptToken: string | null = null;
 let lastQuestionId: string | null = null;
 let lastOptions: Array<{ id: string; text: string }> = [];
 
-// types
 export type GameStage = "basic" | "mid" | "advanced";
 export type GameQuestionOption = { id: string; text: string };
 export type GameQuestion = {
@@ -45,11 +44,9 @@ export type SummaryRes = {
   leaderboardPosition?: number;
 };
 
-// helpers
 const toStage = (n: number | string | undefined): GameStage => {
-  if (n === 1 || n === "basic") return "basic";
-  if (n === 2 || n === "mid" || n === "intermediate") return "mid";
-  if (n === 3 || n === "advanced" || n === "adv") return "advanced";
+  if (n === 1 || n === "mid") return "mid";
+  if (n === 2 || n === "advanced" || n === "adv") return "advanced";
   return "basic";
 };
 
@@ -58,20 +55,25 @@ const normalizeOptions = (raw: any[]): GameQuestionOption[] => {
   return raw.map((o, idx) => {
     if (o && typeof o === "object") {
       const id = String((o as any).id ?? (o as any).value ?? (o as any).key ?? idx);
-      const text = String((o as any).text ?? (o as any).label ?? (o as any).name ?? (o as any).value ?? "");
+      const text = String(
+        (o as any).text ??
+          (o as any).label ??
+          (o as any).name ??
+          (o as any).value ??
+          ""
+      );
       return { id, text };
     }
     return { id: String(idx), text: String(o ?? "") };
   });
 };
 
-// API
 export async function startSession(): Promise<StartSessionRes> {
   return http.post<StartSessionRes>(API.game.start, {});
 }
 
 export async function getNextQuestion(): Promise<GameQuestion | null> {
-  const res = await http.get<any>(API.game.next); // GET (controller is @Get)
+  const res = await http.get<any>(API.game.next);
   if (!res || res.done) return null;
 
   lastAttemptToken = res.attemptToken ?? null;
@@ -92,10 +94,17 @@ export async function getNextQuestion(): Promise<GameQuestion | null> {
   };
 }
 
-export async function submitAnswer(payload: { questionId: string; optionId: string; }): Promise<SubmitAnswerRes> {
-  if (!lastAttemptToken || !lastQuestionId) throw new Error("No active question to submit");
+export async function submitAnswer(payload: {
+  questionId: string;
+  optionId: string; // '' allowed
+}): Promise<SubmitAnswerRes> {
+  if (!lastAttemptToken || !lastQuestionId) {
+    throw new Error("No active question to submit");
+  }
   const { questionId, optionId } = payload;
-  if (questionId !== lastQuestionId) throw new Error("Question mismatch");
+  if (questionId !== lastQuestionId) {
+    throw new Error("Question mismatch");
+  }
 
   let selectedIndex = 0;
   if (optionId) {
@@ -104,34 +113,23 @@ export async function submitAnswer(payload: { questionId: string; optionId: stri
     selectedIndex = idx;
   }
 
-  const dto = { attemptToken: lastAttemptToken, questionId, selectedIndex, optionId };
+  const dto = {
+    attemptToken: lastAttemptToken,
+    questionId,
+    selectedIndex,   // 0..N-1
+    optionId,        // '' allowed; BE transforms '' → undefined
+  };
+
   const res = await http.post<SubmitAnswerRes>(API.game.submit, dto);
   lastAttemptToken = null;
   return res;
 }
 
-// map /game/status → SummaryRes shape so the UI shows numbers
 export async function getSummary(): Promise<SummaryRes> {
-  const s = await http.get<any>(API.game.status);
-  const byStage = s?.stageState?.byStage ?? {};
-  const stages = [1, 2, 3];
-  const agg = stages.reduce(
-    (acc, k) => {
-      const row = byStage[k] ?? {};
-      acc.points += Number(row.points ?? 0);
-      acc.correct += Number(row.correct ?? 0);
-      acc.total += Number(row.answered ?? 0);
-      return acc;
-    },
-    { points: 0, correct: 0, total: 0 }
-  );
+  return http.get<SummaryRes>(API.game.status);
+}
 
-  return {
-    sessionId: s?.sessionId ?? "",
-    totalPoints: agg.points,
-    correctCount: agg.correct,
-    totalCount: agg.total,
-    stageReached: toStage(s?.stageUnlocked),
-    leaderboardPosition: s?.leaderboardPosition ?? undefined,
-  };
+// Anti-cheat: reset session points to zero
+export async function resetPoints(): Promise<{ ok: true } | void> {
+  return http.post(API.game.resetPoints, {});
 }

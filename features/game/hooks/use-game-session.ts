@@ -6,28 +6,14 @@ import {
   getNextQuestion,
   submitAnswer,
   getSummary,
+  resetPoints as resetPointsApi,
   type GameQuestion,
   type SummaryRes,
   type SubmitAnswerRes,
 } from "../services/game.client";
+import { useSessionStore } from "@lib/store/session.store";
 
-type Status =
-  | "idle"
-  | "loading"
-  | "question"
-  | "submitting"
-  | "summary"
-  | "locked"
-  | "error";
-
-function setActiveSessionFlag(on: boolean) {
-  if (typeof window === "undefined") return;
-  if (on) localStorage.setItem("cn_hasActiveSession", "1");
-  else localStorage.removeItem("cn_hasActiveSession");
-  window.dispatchEvent(
-    new StorageEvent("storage", { key: "cn_hasActiveSession" })
-  );
-}
+type Status = "idle" | "loading" | "question" | "submitting" | "summary" | "locked" | "error";
 
 export function useGameSession() {
   const [status, setStatus] = useState<Status>("idle");
@@ -39,6 +25,9 @@ export function useGameSession() {
   const [summary, setSummary] = useState<SummaryRes | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // session store actions
+  const markSessionActive = useSessionStore((s) => s.markSessionActive);
+
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const clearTimer = useCallback(() => {
@@ -47,25 +36,6 @@ export function useGameSession() {
       timerRef.current = null;
     }
   }, []);
-
-  const startTimer = useCallback(
-    (seconds: number) => {
-      clearTimer();
-      setTimeLeft(seconds);
-      timerRef.current = setInterval(() => {
-        setTimeLeft((t) => {
-          if (t <= 1) {
-            clearTimer();
-            // auto-submit with no selection
-            void handleSubmit(undefined, true);
-            return 0;
-          }
-          return t - 1;
-        });
-      }, 1000);
-    },
-    [clearTimer]
-  );
 
   const loadNext = useCallback(async () => {
     setSelected(null);
@@ -76,10 +46,9 @@ export function useGameSession() {
         const s = await getSummary();
         setSummary(s);
         setStatus("summary");
-        setActiveSessionFlag(false);
+        markSessionActive(false); // also stamps lastSessionAt
         return;
       }
-      console.log("question", q);
       setQuestion(q);
       setStatus("question");
       startTimer(q.timeLimitSec ?? 30);
@@ -87,7 +56,23 @@ export function useGameSession() {
       setStatus("error");
       setError(e?.message ?? "Failed to load question");
     }
-  }, [startTimer]);
+  }, [markSessionActive]);
+
+  const startTimer = useCallback((seconds: number) => {
+    clearTimer();
+    setTimeLeft(seconds);
+    timerRef.current = setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 1) {
+          clearTimer();
+          // ⏲️ On timeout, auto-advance to next question (no submit -> no 400)
+          void loadNext();
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+  }, [clearTimer, loadNext]);
 
   const begin = useCallback(async () => {
     try {
@@ -99,71 +84,82 @@ export function useGameSession() {
       setStatus("loading");
 
       const s = await startSession();
-      console.log("sees", s);
-      if (s.locked) {
+      if ((s as any).locked) {
         setStatus("locked");
-        setActiveSessionFlag(false);
+        markSessionActive(false);
         return;
       }
       setSession({ sessionId: s.sessionId });
-      setActiveSessionFlag(true);
+      markSessionActive(true);
       await loadNext();
     } catch (e: any) {
       setStatus("error");
       setError(e?.message ?? "Failed to start session");
     }
-  }, [loadNext]);
+  }, [loadNext, markSessionActive]);
 
   const handleSubmit = useCallback(
-    async (optionId?: string, dueToTimeout = false) => {
+    async (optionId?: string) => {
       if (!question) return;
       setStatus("submitting");
       try {
-        const res = await submitAnswer({
-          questionId: question.id,
-          optionId: optionId ?? "",
-        });
+        const res = await submitAnswer({ questionId: question.id, optionId: optionId ?? "" });
         setLastSubmit(res);
 
-        // If game complete → summary
-        if (res.gameComplete) {
+        if ((res as any).gameComplete) {
           const s = await getSummary();
           setSummary(s);
           setStatus("summary");
-          setActiveSessionFlag(false);
+          markSessionActive(false);
           clearTimer();
           return;
         }
 
-        // If correct, move on immediately
         if (res.correct) {
           await loadNext();
           return;
         }
 
-        // Incorrect: stay here and let UI decide (walk away or continue with penalty)
+        // Incorrect: stay; UI offers walk away / continue
         setStatus("question");
       } catch (e: any) {
         setStatus("error");
         setError(e?.message ?? "Failed to submit");
       }
     },
-    [question, clearTimer, loadNext]
+    [question, clearTimer, loadNext, markSessionActive]
   );
 
-  const continueWithPenalty = useCallback(async () => {
-    // Back-end should apply the penalty on next submit or internally
+  // Accept an optional reason (e.g., "stepdown") — backend call unchanged
+  const continueWithPenalty = useCallback(async (_reason?: string) => {
     await loadNext();
   }, [loadNext]);
 
   const walkAway = useCallback(async () => {
-    // End the session and show summary
     const s = await getSummary();
     setSummary(s);
     setStatus("summary");
-    setActiveSessionFlag(false);
+    markSessionActive(false);
     clearTimer();
-  }, [clearTimer]);
+  }, [clearTimer, markSessionActive]);
+
+  // 🕵🏼 Anti-cheat: reset points if user blurs or hides tab
+  const handleBlurOrHide = useCallback(async () => {
+    if (status === "question" || status === "submitting") {
+      try { await resetPointsApi(); } catch {}
+    }
+  }, [status]);
+
+  useEffect(() => {
+    const onBlur = () => void handleBlurOrHide();
+    const onVis = () => { if (document.visibilityState === "hidden") void handleBlurOrHide(); };
+    window.addEventListener("blur", onBlur);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.removeEventListener("blur", onBlur);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [handleBlurOrHide]);
 
   const pickOption = useCallback((id: string) => setSelected(id), []);
   const isAnswered = useMemo(() => !!selected, [selected]);

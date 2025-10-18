@@ -21,7 +21,7 @@ export function TabBar() {
 
   return (
     <nav
-      className="sticky bottom-0 z-40 border-t border-line bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70"
+      className="sticky bottom-0 z-40 border-t border-line bg-white/95 dark:bg-surface  backdrop-blur supports-[backdrop-filter]:bg-white/70"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       aria-label="Primary"
     >

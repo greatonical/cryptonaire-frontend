@@ -12,6 +12,7 @@ const api = axios.create({
   baseURL,
   headers: { "Content-Type": "application/json" },
   withCredentials: false,
+  timeout: 8000
 });
 
 // Attach JWT from Zustand (client-side)
@@ -43,7 +44,10 @@ api.interceptors.response.use(
         localStorage.removeItem("jwt");
       } catch {}
       // soft redirect
-      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/signin")) {
+      if (
+        typeof window !== "undefined" &&
+        !window.location.pathname.startsWith("/signin")
+      ) {
         window.location.assign("/signin");
       }
     }
@@ -62,15 +66,15 @@ api.interceptors.response.use(
 
 // Thin wrappers
 export const http = {
-  get:   async <T = unknown>(url: string, params?: any) =>
+  get: async <T = unknown>(url: string, params?: any) =>
     api.get<T>(url, { params }).then((r) => r.data),
-  post:  async <T = unknown>(url: string, data?: any) =>
+  post: async <T = unknown>(url: string, data?: any) =>
     api.post<T>(url, data).then((r) => r.data),
-  put:   async <T = unknown>(url: string, data?: any) =>
+  put: async <T = unknown>(url: string, data?: any) =>
     api.put<T>(url, data).then((r) => r.data),
   patch: async <T = unknown>(url: string, data?: any) =>
     api.patch<T>(url, data).then((r) => r.data),
-  del:   async <T = unknown>(url: string) =>
+  del: async <T = unknown>(url: string) =>
     api.delete<T>(url).then((r) => r.data),
 };
 

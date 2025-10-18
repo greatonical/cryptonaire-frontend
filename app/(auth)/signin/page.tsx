@@ -1,8 +1,17 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { useAccount, useConnect, useDisconnect, useSignMessage, useChainId } from "wagmi";
-import { getSiweChallenge, verifySiwe } from "@features/auth/services/auth.client";
+import {
+  useAccount,
+  useConnect,
+  useDisconnect,
+  useSignMessage,
+  useChainId,
+} from "wagmi";
+import {
+  getSiweChallenge,
+  verifySiwe,
+} from "@features/auth/services/auth.client";
 import { buildSiweMessage } from "@features/auth/utils/siwe";
 import { useSessionStore } from "@lib/store/session.store";
 import { useRouter } from "next/navigation";
@@ -21,7 +30,10 @@ export default function SignInPage() {
   const router = useRouter();
   const chainId = useChainId();
   const { connect, connectors, isPending: isConnecting } = useConnect();
-  const injectedConnector = useMemo(() => connectors.find((c) => c.id === "injected"), [connectors]);
+  const injectedConnector = useMemo(
+    () => connectors.find((c) => c.id === "injected"),
+    [connectors]
+  );
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const { signMessageAsync } = useSignMessage();
@@ -37,7 +49,9 @@ export default function SignInPage() {
   async function handleConnect() {
     try {
       if (!injectedConnector) {
-        toast.error("No injected wallet available. Open in Base App or a Farcaster client.");
+        toast.error(
+          "No injected wallet available. Open in Base App or a Farcaster client."
+        );
         return;
       }
       await connect({ connector: injectedConnector });
@@ -53,7 +67,13 @@ export default function SignInPage() {
       const { nonce } = await getSiweChallenge(address);
       const domain = window.location.host;
       const uri = window.location.origin.replace(/\/$/, ""); // normalize like server
-      const message = buildSiweMessage({ domain, address, uri, chainId, nonce });
+      const message = buildSiweMessage({
+        domain,
+        address,
+        uri,
+        chainId,
+        nonce,
+      });
       const signature = (await signMessageAsync({ message })) as `0x${string}`;
       const { jwt } = await verifySiwe({ message, signature, address });
       setJwt(jwt);
@@ -76,27 +96,47 @@ export default function SignInPage() {
         </div>
 
         {!isConnected ? (
-          <Button className="z-10" onClick={handleConnect} disabled={isConnecting} size="lg" variant="primary" block>
+          <Button
+            className="z-10"
+            onClick={handleConnect}
+            disabled={isConnecting}
+            size="lg"
+            variant="primary"
+            block
+          >
             {isConnecting ? "Connecting…" : "Connect Wallet"}
           </Button>
         ) : (
           <div className="w-full space-y-3 z-10">
             <Card>
               <Text size="sm">
-                Connected as <span className="font-mono">{`${address?.slice(0, 28)}...`}</span>
+                Connected as{" "}
+                <span className="font-mono">{`${address?.slice(
+                  0,
+                  28
+                )}...`}</span>
               </Text>
             </Card>
 
             <Button onClick={handleSignIn} size="lg" variant="primary" block>
               Sign in with Ethereum
             </Button>
-            <Button onClick={() => disconnect()} size="lg" variant="outline" block>
+            <Button
+              onClick={() => disconnect()}
+              size="lg"
+              variant="outline"
+              block
+            >
               Disconnect
             </Button>
           </div>
         )}
 
-        <Lottie className="self-center absolute opacity-50" animationData={BackgroundAnimation} loop />
+        <Lottie
+          className="self-center absolute opacity-50"
+          animationData={BackgroundAnimation}
+          loop
+        />
       </div>
     </Screen>
   );

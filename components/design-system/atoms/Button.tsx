@@ -18,7 +18,7 @@ const VARIANT: Record<Variant, string> = {
   primary:
     "bg-brand text-white hover:bg-brand-700 disabled:opacity-60 disabled:cursor-not-allowed",
   outline:
-    "border border-line bg-white hover:bg-black/5 disabled:opacity-60 disabled:cursor-not-allowed",
+    "border border-line bg-white hover:bg-black/5 hover:border-brand disabled:opacity-60 disabled:cursor-not-allowed",
   ghost:
     "bg-transparent hover:bg-black/5 disabled:opacity-60 disabled:cursor-not-allowed",
   soft:
@@ -39,7 +39,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          "inline-flex items-center justify-center gap-2 font-medium transition shadow-card",
+          "inline-flex items-center justify-center gap-2 font-medium transition shadow-card cursor-pointer",
           VARIANT[variant],
           SIZE[size],
           block && "w-full",

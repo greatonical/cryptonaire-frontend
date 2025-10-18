@@ -1,6 +1,8 @@
 {
   "accountAssociation": {
-  
+    "header": "eyJmaWQiOjEzNzUxNTYsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHhCN0FDYThCODE4MGZiNWU1OTE3RWUxNWUzRURmNTdjMmVENDg3M2ZDIn0",
+    "payload": "eyJkb21haW4iOiJ3d3cuY3J5cHRvbmFpcmUuZnVuIn0",
+    "signature": "MGspttcS02D6qrp/wWCdGE/5T5gtpsATTbD0XOdIEhlYMskmJ6d4Y/Ezm53g2BUq2g+keyIUVmOgKTmX9TlbyBw="
   },
   "miniapp": {
     "version": "1",
@@ -10,12 +12,10 @@
     "imageUrl": "https://www.cryptonaire.fun/image.png",
     "splashImageUrl": "https://www.cryptonaire.fun/splash.png",
     "splashBackgroundColor": "#3C6FFF",
-
     "webhookUrl": "https://www.cryptonaire.fun/api/webhook",
     "primaryCategory": "games",
     "description": "Cryptonaire allows you to earn by learning. ",
     "subtitle": "The game for knowledge",
-
     "heroImageUrl": "https://www.cryptonaire.fun/hero.png",
     "ogImageUrl": "https://www.cryptonaire.fun/og-image.png",
     "ogTitle": "Cryptonaire",

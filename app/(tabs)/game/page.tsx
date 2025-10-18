@@ -75,7 +75,13 @@ function GameInner() {
     const last = lastSessionAt ?? 0;
     const day = 24 * 60 * 60 * 1000;
     const delta = Date.now() - last;
-    setCtaLabel(hasActiveSession ? "Resume" : delta < day ? "Resume" : "Start a new session");
+    setCtaLabel(
+      hasActiveSession
+        ? "Resume"
+        : delta < day
+        ? "Resume"
+        : "Start a new session"
+    );
   }, [status, lastSessionAt, hasActiveSession]);
 
   // Open penalty modal when last submit was incorrect
@@ -97,35 +103,37 @@ function GameInner() {
   }, [lastSubmit?.stageComplete]);
 
   // inside GameInner()
-const correctAudio = useRef<HTMLAudioElement | null>(null);
-useEffect(() => {
-  // lazy init once on client
-  if (!correctAudio.current) {
-    const a = new Audio('/sfx/onboard.mp3');
-    a.preload = "auto";
-    correctAudio.current = a;
-  }
-}, []);
+  const correctAudio = useRef<HTMLAudioElement | null>(null);
+  useEffect(() => {
+    // lazy init once on client
+    if (!correctAudio.current) {
+      const a = new Audio("/sfx/onboard.mp3");
+      a.preload = "auto";
+      correctAudio.current = a;
+    }
+  }, []);
 
-// when a submission resolves
-useEffect(() => {
-  if (lastSubmit?.correct && correctAudio.current) {
-    // do not block UI – fire & forget
-    correctAudio.current.currentTime = 0;
-    correctAudio.current.play().catch(() => {});
-  }
-}, [lastSubmit?.correct]);
+  // when a submission resolves
+  useEffect(() => {
+    if (lastSubmit?.correct && correctAudio.current) {
+      // do not block UI – fire & forget
+      correctAudio.current.currentTime = 0;
+      correctAudio.current.play().catch(() => {});
+    }
+  }, [lastSubmit?.correct]);
 
   const submitting = status === "submitting";
 
   // Normalize question shape safely (handles question.body.*)
   const qText = useMemo(() => {
     // @ts-expect-error
+    // error expected in question.body
     return question?.text ?? question?.body?.text ?? "";
   }, [question]);
 
   const qOptions = useMemo(() => {
     // @ts-expect-error
+    // error expected in question.body
     const opts = question?.options ?? question?.body?.options;
     return Array.isArray(opts) ? opts : [];
   }, [question]);
@@ -165,9 +173,15 @@ useEffect(() => {
           <Card>
             <Heading level={2}>Session summary</Heading>
             <ul className="mt-3 space-y-1 text-sm">
-              <li>Total points: <b>{tp}</b></li>
-              <li>Correct: <b>{cc}</b> / {tc}</li>
-              <li>Stage reached: <b>{sr}</b></li>
+              <li>
+                Total points: <b>{tp}</b>
+              </li>
+              <li>
+                Correct: <b>{cc}</b> / {tc}
+              </li>
+              <li>
+                Stage reached: <b>{sr}</b>
+              </li>
             </ul>
           </Card>
 
@@ -175,7 +189,12 @@ useEffect(() => {
             <Button onClick={() => begin()} size="lg" className="flex-1">
               {ctaLabel}
             </Button>
-            <Button onClick={() => window.location.assign("/leaderboard")} size="lg" variant="outline" className="flex-1">
+            <Button
+              onClick={() => window.location.assign("/leaderboard")}
+              size="lg"
+              variant="outline"
+              className="flex-1"
+            >
               View leaderboard
             </Button>
           </div>
@@ -259,15 +278,23 @@ useEffect(() => {
           </div>
           <Heading level={3}>Incorrect answer</Heading>
           <Text tone="muted">
-            Continue to keep playing (you’ll lose some points), or walk away to end today’s session.
+            Continue to keep playing (you’ll lose some points), or walk away to
+            end today’s session.
           </Text>
           <div className="flex gap-2">
-            <Button variant="outline" className="flex-1" onClick={handleWalkAway}>
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={handleWalkAway}
+            >
               Walk away
             </Button>
             <Button
               className="flex-1"
-              onClick={() => { setShowPenalty(false); void continueWithPenalty("stepdown"); }}
+              onClick={() => {
+                setShowPenalty(false);
+                void continueWithPenalty("stepdown");
+              }}
             >
               Continue and go back to the previous level
             </Button>

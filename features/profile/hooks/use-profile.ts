@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   fetchProfile,
   updateProfile,
-  type ProfileDTO,
+  // type ProfileDTO,
   type Profile,
 } from "../services/profile.client";
 
@@ -19,7 +19,7 @@ export function useProfile() {
 
   const { mutateAsync, isPending: isUpdating } = useMutation({
     mutationKey: ["profile", "update"],
-    mutationFn: (patch: ProfileDTO) => updateProfile(patch),
+    // mutationFn: (patch: ProfileDTO) => updateProfile(patch),
     onSuccess: (next) => {
       qc.setQueryData<Profile>(["profile", "me"], (prev) => ({ ...(prev ?? {} as any), ...(next as any) }));
     },

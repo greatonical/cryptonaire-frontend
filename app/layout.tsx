@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import Providers from "./providers";
 import { ThemeApplier } from "@components/providers/ThemeApplier";
+import FarcasterBoot from "./farcaster-boot";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -53,6 +54,7 @@ export default function RootLayout({
       >
         <Providers>
           <ThemeApplier />
+          <FarcasterBoot/>
           {children}
         </Providers>
       </body>

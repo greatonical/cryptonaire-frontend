@@ -126,14 +126,12 @@ function GameInner() {
 
   // Normalize question shape safely (handles question.body.*)
   const qText = useMemo(() => {
-    // @ts-expect-error
-    // error expected in question.body
+    // @ts-expect-error error expected in question.body
     return question?.text ?? question?.body?.text ?? "";
   }, [question]);
 
   const qOptions = useMemo(() => {
-    // @ts-expect-error
-    // error expected in question.body
+    // @ts-expect-error error expected in question.body
     const opts = question?.options ?? question?.body?.options;
     return Array.isArray(opts) ? opts : [];
   }, [question]);

@@ -47,7 +47,7 @@ export default function QuestionCard({
               onClick={() => onSelect(opt.id)}
               disabled={disabled}
               variant={variant}
-              className="justify-start"
+              className="justify-start items-start flex text-start"
               block
             >
               {opt.text}

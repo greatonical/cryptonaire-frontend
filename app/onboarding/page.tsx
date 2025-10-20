@@ -26,14 +26,14 @@ export default function OnboardingPage() {
   const router = useRouter();
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  useEffect(() => {
-    // Preload tiny sfx (ensure you place /public/sfx/onboard.mp3)
-    if (!audioRef.current) {
-      const a = new Audio("/sfx/onboard.mp3");
-      a.volume = 0.35;
-      audioRef.current = a;
-    }
-  }, []);
+  // useEffect(() => {
+  //   // Preload tiny sfx (ensure you place /public/sfx/onboard.mp3)
+  //   if (!audioRef.current) {
+  //     const a = new Audio("/sfx/onboard.mp3");
+  //     a.volume = 0.35;
+  //     audioRef.current = a;
+  //   }
+  // }, []);
 
   const next = () => {
     audioRef.current?.play().catch(() => void 0);

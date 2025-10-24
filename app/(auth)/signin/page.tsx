@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   useAccount,
   useConnect,
@@ -27,79 +27,140 @@ import { CryptonaireIcon } from "@components/design-system/atoms/Icon";
 import Lottie from "lottie-react";
 import BackgroundAnimation from "@assets/animations/intro-bg-anim.json";
 
-const TARGET_CHAIN = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 8453);
+const TARGET_CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 8453);
 
 export default function SignInPage() {
   const router = useRouter();
   const chainId = useChainId();
+  const { switchChainAsync } = useSwitchChain();
 
-  const {
-    connect,
-    connectors,
-    isPending: isConnecting,
-    status: connectStatus,
-  } = useConnect();
-
-  // Prefer an injected/ready connector, but fall back to the first "ready" one
-  const preferredConnector = useMemo(() => {
-    const ready = connectors.filter((c) => c.ready);
-    return (
-      ready.find((c) => c.id === "injected") ??
-      ready[0] ??
-      connectors.find((c) => c.id === "injected") ??
-      connectors[0]
-    );
-  }, [connectors]);
-
-  const { address, isConnected, status: accountStatus } = useAccount();
-  const connected = !!address; // <- more robust in some mini-apps
+  const { connectors, connectAsync, isPending: isConnecting } = useConnect();
+  const { address: wagmiAddress } = useAccount();
   const { disconnect } = useDisconnect();
   const { signMessageAsync } = useSignMessage();
-  const { switchChainAsync } = useSwitchChain();
 
   const setAddress = useSessionStore((s) => s.setAddress);
   const setJwt = useSessionStore((s) => s.setJwt);
   const jwt = useSessionStore((s) => s.jwt);
 
-  // When we actually see an address, persist it so UI flips immediately.
-  useEffect(() => {
-    if (address) setAddress(address as `0x${string}`);
-  }, [address, setAddress]);
+  // --- track a real address no matter what (Wagmi OR raw provider) ---
+  const [activeAddress, setActiveAddress] = useState<`0x${string}` | null>(null);
+  const accountsWatcherSet = useRef(false);
 
-  // If already authed, go home
+  // Helper: try several ways to discover an address quickly
+  async function detectAddress(): Promise<`0x${string}` | null> {
+    // 1) Wagmi already knows
+    if (wagmiAddress) return wagmiAddress as `0x${string}`;
+
+    // 2) EIP-1193 injected provider
+    const eth = (globalThis as any).ethereum;
+    if (eth?.request) {
+      // some providers expose selectedAddress synchronously
+      if (eth.selectedAddress && /^0x[a-f0-9]{40}$/i.test(eth.selectedAddress)) {
+        return eth.selectedAddress as `0x${string}`;
+      }
+      try {
+        const accs = (await eth.request({ method: "eth_accounts" })) as string[] | undefined;
+        if (accs && accs[0] && /^0x[a-f0-9]{40}$/i.test(accs[0])) {
+          return accs[0] as `0x${string}`;
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    return null;
+  }
+
+  // Keep activeAddress in sync (and listen for account changes)
+  useEffect(() => {
+    let stop = false;
+
+    const sync = async () => {
+      const a = await detectAddress();
+      if (!stop) setActiveAddress(a);
+    };
+    sync();
+
+    const eth = (globalThis as any).ethereum;
+    if (eth && !accountsWatcherSet.current && eth.on) {
+      accountsWatcherSet.current = true;
+      const onAccounts = (accs: string[]) => {
+        const next = accs?.[0];
+        setActiveAddress(next && /^0x[a-f0-9]{40}$/i.test(next) ? (next as `0x${string}`) : null);
+      };
+      eth.on("accountsChanged", onAccounts);
+      return () => {
+        try { eth.removeListener?.("accountsChanged", onAccounts); } catch {}
+        accountsWatcherSet.current = false;
+        stop = true;
+      };
+    }
+
+    return () => {
+      stop = true;
+    };
+  }, [wagmiAddress]);
+
+  // If you already have a JWT, go home
   useEffect(() => {
     if (jwt) router.replace("/home");
   }, [jwt, router]);
 
+  // Choose a connector that’s actually usable in mini-apps
+  const preferredConnector = useMemo(() => {
+    // Prefer injected if present
+    const injected = connectors.find((c) => c.id === "injected" || c.type === "injected");
+    if (injected) return injected;
+    // Next: Coinbase Wallet / WalletConnect if injected not available
+    const coinbase = connectors.find((c) => c.id.includes("coinbase"));
+    if (coinbase) return coinbase;
+    const wc = connectors.find((c) => c.id.includes("walletConnect"));
+    if (wc) return wc;
+    // Fallback: first connector
+    return connectors[0];
+  }, [connectors]);
+
+  async function ensureTargetChain() {
+    try {
+      if (!TARGET_CHAIN_ID || chainId === TARGET_CHAIN_ID) return;
+      await switchChainAsync({ chainId: TARGET_CHAIN_ID });
+    } catch {
+      // Non-fatal; user can still sign, but show a gentle hint
+      toast((t) => (
+        <div>
+          <div className="font-medium">Wrong network</div>
+          <div className="text-sm opacity-80">Please switch to Base to continue.</div>
+          <button onClick={() => toast.dismiss(t.id)} className="mt-2 underline">Dismiss</button>
+        </div>
+      ));
+    }
+  }
+
   async function handleConnect() {
     try {
       if (!preferredConnector) {
-        toast.error("No wallet connector available in this environment.");
+        toast.error("No wallet connector available in this app.");
         return;
       }
 
-      await connect({
-        connector: preferredConnector,
-        chainId: TARGET_CHAIN, // force Base chain (fixes “connected but not connected” on some wallets)
-      });
+      await connectAsync({ connector: preferredConnector });
 
-      // If the wallet connected on a different chain, try to switch.
-      if (chainId && chainId !== TARGET_CHAIN) {
-        try {
-          await switchChainAsync({ chainId: TARGET_CHAIN });
-        } catch {
-          // Some in-app wallets don’t support programmatic switching; continue gracefully.
-        }
+      // Give providers a tick to populate accounts in mini-apps
+      let addr: `0x${string}` | null = null;
+      for (let i = 0; i < 15; i++) {
+        addr = await detectAddress();
+        if (addr) break;
+        await new Promise((r) => setTimeout(r, 100));
       }
 
-      // As a final fallback, ask the provider for accounts (helps a few mini-apps)
-      if (!address && typeof window !== "undefined" && (window as any).ethereum?.request) {
-        try {
-          await (window as any).ethereum.request({ method: "eth_requestAccounts" });
-        } catch {}
+      if (!addr) {
+        toast.error("Connected, but no account was provided by the wallet.");
+        return;
       }
 
+      setActiveAddress(addr);
       toast.success("Wallet connected");
+      await ensureTargetChain();
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to connect");
     }
@@ -107,21 +168,39 @@ export default function SignInPage() {
 
   async function handleSignIn() {
     try {
-      if (!address) throw new Error("No wallet connected");
-      const { nonce } = await getSiweChallenge(address);
+      const addr = activeAddress;
+      if (!addr) throw new Error("No wallet connected");
+
+      const { nonce } = await getSiweChallenge(addr);
       const domain = window.location.host;
-      const uri = window.location.origin.replace(/\/$/, ""); // normalize like server
+      const uri = window.location.origin.replace(/\/$/, "");
+
       const message = buildSiweMessage({
         domain,
-        address,
+        address: addr,
         uri,
-        chainId: TARGET_CHAIN,
+        chainId: TARGET_CHAIN_ID || chainId,
         nonce,
       });
-      const signature = (await signMessageAsync({ message })) as `0x${string}`;
-      const { jwt } = await verifySiwe({ message, signature, address });
+
+      // First try Wagmi’s signer
+      let signature: `0x${string}`;
+      try {
+        signature = (await signMessageAsync({ message })) as `0x${string}`;
+      } catch {
+        // Fallback: EIP-1193 personal_sign (some mini-apps need this)
+        const eth = (globalThis as any).ethereum;
+        if (!eth?.request) throw new Error("No signer available in this environment");
+        const sig = await eth.request({
+          method: "personal_sign",
+          params: [message, addr],
+        });
+        signature = sig as `0x${string}`;
+      }
+
+      const { jwt } = await verifySiwe({ message, signature, address: addr });
       setJwt(jwt);
-      setAddress(address as `0x${string}`);
+      setAddress(addr);
       toast.success("Signed in");
       router.replace("/home");
     } catch (e: any) {
@@ -129,6 +208,8 @@ export default function SignInPage() {
       toast.error(e?.message ?? "Sign-in failed");
     }
   }
+
+  const isReady = Boolean(activeAddress);
 
   return (
     <Screen>
@@ -139,17 +220,16 @@ export default function SignInPage() {
           <Text tone="muted">Connect your wallet to get started.</Text>
         </div>
 
-        {/* Use `connected` (address presence) rather than `isConnected` */}
-        {!connected ? (
+        {!isReady ? (
           <Button
             className="z-10"
             onClick={handleConnect}
-            disabled={isConnecting ?? connectStatus === "pending"}
+            disabled={isConnecting}
             size="lg"
             variant="primary"
             block
           >
-            {isConnecting ?? connectStatus === "pending" ? "Connecting…" : "Connect Wallet"}
+            {isConnecting ? "Connecting…" : "Connect Wallet"}
           </Button>
         ) : (
           <div className="w-full space-y-3 z-10">
@@ -157,26 +237,33 @@ export default function SignInPage() {
               <Text size="sm">
                 Connected as{" "}
                 <span className="font-mono">
-                  {address ? `${address.slice(0, 6)}…${address.slice(-4)}` : "—"}
+                  {`${activeAddress.slice(0, 6)}…${activeAddress.slice(-4)}`}
                 </span>
               </Text>
-              {chainId !== TARGET_CHAIN && (
-                <Text size="xs" tone="danger" className="mt-1">
-                  Wrong network. Please switch to Base.
-                </Text>
-              )}
             </Card>
 
             <Button onClick={handleSignIn} size="lg" variant="primary" block>
               Sign in with Ethereum
             </Button>
-            <Button onClick={() => disconnect()} size="lg" variant="outline" block>
+            <Button
+              onClick={() => {
+                setActiveAddress(null);
+                disconnect();
+              }}
+              size="lg"
+              variant="outline"
+              block
+            >
               Disconnect
             </Button>
           </div>
         )}
 
-        <Lottie className="self-center absolute opacity-50" animationData={BackgroundAnimation} loop />
+        <Lottie
+          className="self-center absolute opacity-50"
+          animationData={BackgroundAnimation}
+          loop
+        />
       </div>
     </Screen>
   );

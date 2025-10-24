@@ -237,7 +237,7 @@ export default function SignInPage() {
               <Text size="sm">
                 Connected as{" "}
                 <span className="font-mono">
-                  {`${activeAddress.slice(0, 6)}…${activeAddress.slice(-4)}`}
+                  {`${activeAddress?.slice(0, 6)}…${activeAddress?.slice(-4)}`}
                 </span>
               </Text>
             </Card>

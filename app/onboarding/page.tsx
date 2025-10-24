@@ -36,7 +36,7 @@ export default function OnboardingPage() {
   // }, []);
 
   const next = () => {
-    audioRef.current?.play().catch(() => void 0);
+    // audioRef.current?.play().catch(() => void 0);
     if (i < slides.length - 1) setI(i + 1);
     else {
       setOnboardingSeen(true);

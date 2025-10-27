@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { sdk } from "@farcaster/miniapp-sdk";
@@ -28,7 +28,7 @@ import {
 } from "@features/auth/services/auth.client";
 import { buildSiweMessage } from "@features/auth/utils/siwe";
 
-export default function SignInPage() {
+function SignInInner() {
   const router = useRouter();
   const params = useSearchParams();
   const next = params.get("next") || "/home";
@@ -91,7 +91,7 @@ export default function SignInPage() {
       const { jwt } = await verifySiwe({ message, signature, address });
       setJwt(jwt);
       setAddress(address);
-      await Promise.resolve(); // allow persist before nav
+      await Promise.resolve(); // ensure persist before nav
       router.replace(next);
     } catch (e: any) {
       toast.error(e?.message ?? "Sign-in failed");
@@ -111,11 +111,10 @@ export default function SignInPage() {
             Detecting…
           </Button>
         ) : isMini ? (
-          <FarcasterSignInButton />
+          <FarcasterSignInButton next={next} />
         ) : !isConnected ? (
           <Button
             onClick={handleConnect}
-            className="z-50"
             disabled={isConnecting}
             block
             size="lg"
@@ -123,18 +122,17 @@ export default function SignInPage() {
             {isConnecting ? "Connecting…" : "Connect Wallet"}
           </Button>
         ) : (
-          <div className="w-full space-y-3 z-50">
+          <div className="w-full space-y-3">
             <Card>
               <Text size="sm">
                 Connected as{" "}
                 <span className="font-mono">{address?.slice(0, 28)}…</span>
               </Text>
             </Card>
-            <Button className="z-[1000] cursor-pointer" onClick={handleSignIn} block size="lg">
+            <Button onClick={handleSignIn} block size="lg">
               Sign in with Ethereum
             </Button>
             <Button
-            className="z-50"
               onClick={() => disconnect()}
               block
               size="lg"
@@ -146,11 +144,29 @@ export default function SignInPage() {
         )}
 
         <Lottie
-          className="absolute -z-0 opacity-50"
+          className="absolute opacity-50"
           animationData={BackgroundAnimation}
           loop
         />
       </div>
     </Screen>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense
+      fallback={
+        <Screen>
+          <div className="mx-auto max-w-md p-6">
+            <Button disabled block size="lg">
+              Loading…
+            </Button>
+          </div>
+        </Screen>
+      }
+    >
+      <SignInInner />
+    </Suspense>
   );
 }

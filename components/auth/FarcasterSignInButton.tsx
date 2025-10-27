@@ -4,15 +4,12 @@ import { useState } from 'react';
 import { sdk } from '@farcaster/miniapp-sdk';
 import { Button } from '@components/design-system/atoms/Button';
 import toast from 'react-hot-toast';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useSessionStore } from '@lib/store/session.store';
 import { farcasterQuickLogin } from '@features/auth/services/farcaster.client';
 
-export default function FarcasterSignInButton() {
+export default function FarcasterSignInButton({ next = "/home" }: { next?: string }) {
   const router = useRouter();
-  const params = useSearchParams();
-  const next = params.get("next") || "/home";
-
   const [busy, setBusy] = useState(false);
   const setJwt = useSessionStore((s) => s.setJwt);
   const setAddress = useSessionStore((s) => s.setAddress);

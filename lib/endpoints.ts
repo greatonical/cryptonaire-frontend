@@ -8,6 +8,10 @@ export const API = {
     siweChallenge: "/auth/siwe/challenge",
     verify: "/auth/siwe/verify",
     me: "/auth/me",
+     farcaster: {
+      quick: '/auth/farcaster/quick',
+      verify: '/auth/farcaster/verify',
+    },
   },
   game: {
     // start: "/game/session/start",
@@ -37,6 +41,7 @@ export const API = {
     history: "/rewards/history",
     policy: "/rewards/policy",
   },
+
 } as const;
 
 export function url(path: string) {

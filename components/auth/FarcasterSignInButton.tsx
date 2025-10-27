@@ -21,15 +21,19 @@ export default function FarcasterSignInButton({ next = "/home" }: { next?: strin
       const { token } = await sdk.quickAuth.getToken();
       const res = await farcasterQuickLogin(token);
       setJwt(res.jwt);
+      alert(res.jwt)
       if (res.walletAddress) setAddress(res.walletAddress);
+
+      // Ensure the persisted store is flushed before first /home API call
+      await new Promise((r) => setTimeout(r, 0));
+
       toast.success('Signed in with Farcaster');
-      await Promise.resolve(); // persist then navigate
       router.replace(next);
     } catch (e: any) {
       const msg =
         e?.response?.data?.message ||
         e?.message ||
-        'Sign-in failed. Open in Warpcast to try again.';
+        'Sign-in failed. Open in Farcaster to try again.';
       toast.error(msg);
     } finally {
       setBusy(false);
@@ -41,6 +45,8 @@ export default function FarcasterSignInButton({ next = "/home" }: { next?: strin
       <Button onClick={onClick} block size="lg" disabled={busy}>
         {busy ? 'Connecting…' : 'Sign in with Farcaster'}
       </Button>
+
+      
     </div>
   );
 }

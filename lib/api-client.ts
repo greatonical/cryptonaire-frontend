@@ -14,10 +14,13 @@ const api = axios.create({
   timeout: 8000,
 });
 
-// Attach JWT from Zustand (client-side)
+// Attach JWT from Zustand (client-side) OR fallback localStorage('jwt')
 api.interceptors.request.use((config) => {
   try {
-    const token = useSessionStore.getState().jwt;
+    const storeToken = useSessionStore.getState().jwt;
+    const rawFallback =
+      typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+    const token = storeToken || rawFallback || undefined;
     if (token) {
       (config.headers as any) = {
         ...(config.headers || {}),
@@ -30,21 +33,37 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Optional: central 401 handling with ?next=
+// Optional: central 401 handling with ?next=, but only if we HAD a token
 api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err?.response?.status === 401) {
+      // Only bounce if we actually had a token (store or fallback)
+      let hadAnyToken = false;
       try {
-        const store = useSessionStore.getState?.();
-        store?.clear?.();
-        localStorage.removeItem("jwt");
+        const st = useSessionStore.getState?.();
+        const storeToken = st?.jwt;
+        const lsToken =
+          typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+        hadAnyToken = !!storeToken || !!lsToken;
       } catch {}
-      if (typeof window !== "undefined") {
-        const here = encodeURIComponent(
-          window.location.pathname + window.location.search
-        );
-        if (!window.location.pathname.startsWith("/signin")) {
+
+      if (hadAnyToken) {
+        try {
+          const st = useSessionStore.getState?.();
+          st?.clear?.();
+        } catch {}
+        try {
+          if (typeof window !== "undefined") localStorage.removeItem("jwt");
+        } catch {}
+
+        if (
+          typeof window !== "undefined" &&
+          !window.location.pathname.startsWith("/signin")
+        ) {
+          const here = encodeURIComponent(
+            window.location.pathname + window.location.search
+          );
           window.location.assign(`/signin?next=${here}`);
           return; // stop rejecting after redirect
         }

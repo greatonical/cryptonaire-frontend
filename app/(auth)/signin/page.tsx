@@ -90,6 +90,7 @@ function SignInInner() {
       const signature = (await signMessageAsync({ message })) as `0x${string}`;
       const { jwt } = await verifySiwe({ message, signature, address });
       setJwt(jwt);
+      
       setAddress(address);
       await Promise.resolve(); // ensure persist before nav
       router.replace(next);
@@ -116,6 +117,7 @@ function SignInInner() {
           <Button
             onClick={handleConnect}
             disabled={isConnecting}
+            className="z-50"
             block
             size="lg"
           >

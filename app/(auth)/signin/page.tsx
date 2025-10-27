@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { sdk } from "@farcaster/miniapp-sdk";
@@ -27,11 +27,13 @@ import {
   verifySiwe,
 } from "@features/auth/services/auth.client";
 import { buildSiweMessage } from "@features/auth/utils/siwe";
+import api from "@lib/api-client";
+import { CryptonaireIcon } from "@components/design-system/atoms/Icon";
 
-function SignInInner() {
+export default function SignInPage() {
   const router = useRouter();
-  const params = useSearchParams();
-  const next = params.get("next") || "/home";
+  const search = useSearchParams();
+  const next = search?.get("next") || "/home";
 
   const [isMini, setIsMini] = useState<boolean | null>(null);
 
@@ -89,10 +91,11 @@ function SignInInner() {
       });
       const signature = (await signMessageAsync({ message })) as `0x${string}`;
       const { jwt } = await verifySiwe({ message, signature, address });
+
       setJwt(jwt);
-      
+      api.defaults.headers.common['Authorization'] = `Bearer ${jwt}`; // prime axios
+
       setAddress(address);
-      await Promise.resolve(); // ensure persist before nav
       router.replace(next);
     } catch (e: any) {
       toast.error(e?.message ?? "Sign-in failed");
@@ -102,17 +105,17 @@ function SignInInner() {
   return (
     <Screen>
       <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-6 px-4">
-        <div className="w-full text-center">
+          <CryptonaireIcon className="w-14 h-14" />
+        <div className="w-full text-center z-50">
           <Heading level={1}>Welcome to Cryptonaire</Heading>
           <Text tone="muted">Connect your wallet to get started.</Text>
         </div>
-
         {isMini === null ? (
           <Button disabled block size="lg">
             Detecting…
           </Button>
         ) : isMini ? (
-          <FarcasterSignInButton next={next} />
+          <FarcasterSignInButton />
         ) : !isConnected ? (
           <Button
             onClick={handleConnect}
@@ -146,29 +149,11 @@ function SignInInner() {
         )}
 
         <Lottie
-          className="absolute opacity-50"
+          className="absolute opacity-50 -z-0"
           animationData={BackgroundAnimation}
           loop
         />
       </div>
     </Screen>
-  );
-}
-
-export default function SignInPage() {
-  return (
-    <Suspense
-      fallback={
-        <Screen>
-          <div className="mx-auto max-w-md p-6">
-            <Button disabled block size="lg">
-              Loading…
-            </Button>
-          </div>
-        </Screen>
-      }
-    >
-      <SignInInner />
-    </Suspense>
   );
 }

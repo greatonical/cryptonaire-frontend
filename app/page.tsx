@@ -22,9 +22,9 @@ export default function Page() {
     else router.replace("/signin");
   }, [jwt, router, onboardingSeen]);
 
-  useLayoutEffect(() => {
-    import("eruda").then((eruda) => eruda.default.init());
-  }, []);
+  // useLayoutEffect(() => {
+  //   import("eruda").then((eruda) => eruda.default.init());
+  // }, []);
 
 
   // useEffect(()=>{clear()},[])

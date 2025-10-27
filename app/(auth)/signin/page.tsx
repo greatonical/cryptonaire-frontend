@@ -122,7 +122,7 @@ function SignInInner() {
             {isConnecting ? "Connecting…" : "Connect Wallet"}
           </Button>
         ) : (
-          <div className="w-full space-y-3">
+          <div className="w-full space-y-3 z-50">
             <Card>
               <Text size="sm">
                 Connected as{" "}

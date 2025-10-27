@@ -1,4 +1,3 @@
-// lib/store/session.store.ts
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
@@ -82,6 +81,10 @@ type SessionState = {
   /** New: privacy policy */
   privacyAcceptedV1: boolean;
 
+  /** NEW: hydration flag for guards */
+  hasHydrated: boolean;
+  setHasHydrated: (v: boolean) => void;
+
   setAddress: (a?: `0x${string}`) => void;
   setJwt: (t?: string) => void;
   setOnboardingSeen: (v: boolean) => void;
@@ -104,6 +107,10 @@ export const useSessionStore = create<SessionState>()(
       lastSessionAt: undefined,
 
       privacyAcceptedV1: false,
+
+      /** NEW: start false, flip to true after rehydrate */
+      hasHydrated: false,
+      setHasHydrated: (v) => set({ hasHydrated: v }),
 
       setAddress: (address) => set({ address }),
       setJwt: (jwt) => set({ jwt }),
@@ -133,6 +140,10 @@ export const useSessionStore = create<SessionState>()(
     {
       name: "cryptonaire-session",
       storage: secureStorage,
+      // Flip hydration flag when state has been loaded from storage
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated?.(true);
+      },
     }
   )
 );

@@ -1,7 +1,6 @@
-// lib/api-client.ts
 "use client";
 
-import axios, { AxiosError } from "axios";
+import axios from "axios";
 import { getPublicEnv } from "@lib/env";
 import { useSessionStore } from "@lib/store/session.store";
 
@@ -12,7 +11,7 @@ const api = axios.create({
   baseURL,
   headers: { "Content-Type": "application/json" },
   withCredentials: false,
-  timeout: 8000
+  timeout: 8000,
 });
 
 // Attach JWT from Zustand (client-side)
@@ -20,49 +19,40 @@ api.interceptors.request.use((config) => {
   try {
     const token = useSessionStore.getState().jwt;
     if (token) {
-      // works for both AxiosHeaders and plain object
       (config.headers as any) = {
         ...(config.headers || {}),
         Authorization: `Bearer ${token}`,
       };
     }
   } catch {
-    // ignore if called in non-browser contexts
+    // ignore non-browser
   }
   return config;
 });
 
-// Optional: central 401 handling
+// Optional: central 401 handling with ?next=
 api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err?.response?.status === 401) {
       try {
-        // clear JWT in store if present
         const store = useSessionStore.getState?.();
         store?.clear?.();
         localStorage.removeItem("jwt");
       } catch {}
-      // soft redirect
-      if (
-        typeof window !== "undefined" &&
-        !window.location.pathname.startsWith("/signin")
-      ) {
-        window.location.assign("/signin");
+      if (typeof window !== "undefined") {
+        const here = encodeURIComponent(
+          window.location.pathname + window.location.search
+        );
+        if (!window.location.pathname.startsWith("/signin")) {
+          window.location.assign(`/signin?next=${here}`);
+          return; // stop rejecting after redirect
+        }
       }
     }
     return Promise.reject(err);
   }
 );
-// api.interceptors.response.use(
-//   (res) => res,
-//   (err: AxiosError) => {
-//     if (err.response?.status === 401) {
-//       useSessionStore.getState().clear(); // uncomment for auto-logout
-//     }
-//     return Promise.reject(err);
-//   }
-// );
 
 // Thin wrappers
 export const http = {

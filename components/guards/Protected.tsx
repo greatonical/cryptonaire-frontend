@@ -6,23 +6,41 @@ import { Button } from "@components/design-system/atoms/Button";
 import { Heading } from "@components/design-system/atoms/Heading";
 import { Text } from "@components/design-system/atoms/Text";
 import { useSessionStore } from "@lib/store/session.store";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 /**
- * Protected wrapper with a one-time Privacy Policy gate.
- * Uses the session store (encrypted) to persist acceptance.
+ * Protected wrapper with auth gate + one-time Privacy Policy gate.
+ * Waits for persisted store hydration before deciding.
  */
 export function Protected({ children }: { children: React.ReactNode }) {
-  // const router = useRouter();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const jwt = useSessionStore((s) => s.jwt);
+  const hasHydrated = useSessionStore((s) => s.hasHydrated);
+
   const privacyAccepted = useSessionStore((s) => s.privacyAcceptedV1);
   const setPrivacyAccepted = useSessionStore((s) => s.setPrivacyAccepted);
   const [privacyOpen, setPrivacyOpen] = useState(false);
 
-
-
+  // Wait for hydration, then enforce auth
   useEffect(() => {
+    if (!hasHydrated) return;
+    if (!jwt) {
+      const next = encodeURIComponent(pathname || "/home");
+      router.replace(`/signin?next=${next}`);
+    }
+  }, [hasHydrated, jwt, pathname, router]);
+
+  // Handle privacy after hydration
+  useEffect(() => {
+    if (!hasHydrated) return;
     setPrivacyOpen(!privacyAccepted);
-  }, [privacyAccepted]);
+  }, [privacyAccepted, hasHydrated]);
+
+  // Avoid flicker before hydration and during redirect
+  if (!hasHydrated) return null;
+  if (!jwt) return null;
 
   return (
     <>

@@ -10,9 +10,8 @@ type QuickRes = {
   walletAddress?: `0x${string}`;
 };
 
-export async function farcasterQuickLogin(token: string): Promise<QuickRes> {
-  // Backend: POST /auth/farcaster/quick  body: { token }
-  return http.post<QuickRes>(API.auth.farcaster.quick, { token });
+export async function farcasterQuickLogin(token: string): Promise<{ jwt: string; userId: string; walletAddress?: `0x${string}` }> {
+  return http.post(API.auth.farcaster.quick, { token });
 }
 
 export async function farcasterVerify(token: string) {

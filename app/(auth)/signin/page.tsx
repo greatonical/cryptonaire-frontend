@@ -1,6 +1,7 @@
+// app/signin/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { sdk } from "@farcaster/miniapp-sdk";
@@ -13,6 +14,7 @@ import { Button } from "@components/design-system/atoms/Button";
 import Lottie from "lottie-react";
 import BackgroundAnimation from "@assets/animations/intro-bg-anim.json";
 import FarcasterSignInButton from "@components/auth/FarcasterSignInButton";
+import { CryptonaireIcon } from "@components/design-system/atoms/Icon";
 
 import {
   useChainId,
@@ -28,11 +30,18 @@ import {
 } from "@features/auth/services/auth.client";
 import { buildSiweMessage } from "@features/auth/utils/siwe";
 import api from "@lib/api-client";
-import { CryptonaireIcon } from "@components/design-system/atoms/Icon";
 
 export default function SignInPage() {
+  return (
+    <Suspense fallback={<Screen><div className="p-8 text-center">Loading…</div></Screen>}>
+      <SignInInner />
+    </Suspense>
+  );
+}
+
+function SignInInner() {
   const router = useRouter();
-  const search = useSearchParams();
+  const search = useSearchParams(); // OK inside Suspense
   const next = search?.get("next") || "/home";
 
   const [isMini, setIsMini] = useState<boolean | null>(null);
@@ -93,7 +102,11 @@ export default function SignInPage() {
       const { jwt } = await verifySiwe({ message, signature, address });
 
       setJwt(jwt);
-      api.defaults.headers.common['Authorization'] = `Bearer ${jwt}`; // prime axios
+      // Prime axios for immediate authed calls (store remains source of truth)
+      (api.defaults.headers as any).common = {
+        ...(api.defaults.headers as any).common,
+        Authorization: `Bearer ${jwt}`,
+      };
 
       setAddress(address);
       router.replace(next);
@@ -105,11 +118,12 @@ export default function SignInPage() {
   return (
     <Screen>
       <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-6 px-4">
-          <CryptonaireIcon className="w-14 h-14" />
+        <CryptonaireIcon className="w-14 h-14" />
         <div className="w-full text-center z-50">
           <Heading level={1}>Welcome to Cryptonaire</Heading>
-          <Text tone="muted">Connect your wallet to get started.</Text>
+          <Text tone="muted">Sign in to get started.</Text>
         </div>
+
         {isMini === null ? (
           <Button disabled block size="lg">
             Detecting…

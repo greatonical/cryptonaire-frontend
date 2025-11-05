@@ -21,7 +21,7 @@ export default function FarcasterSignInButton({ next = "/home" }: { next?: strin
       const { token } = await sdk.quickAuth.getToken();
       const res = await farcasterQuickLogin(token);
       setJwt(res.jwt);
-      alert(res.jwt)
+      // alert(res.jwt)
       if (res.walletAddress) setAddress(res.walletAddress);
 
       // Ensure the persisted store is flushed before first /home API call

@@ -6,7 +6,8 @@ import { Text } from "@components/design-system/atoms/Text";
 import cn from "clsx";
 
 function shortAddress(addr: string) {
-  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+  const address = addr ? addr : ""
+  return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
 
 function initialsFrom(name?: string | null) {
@@ -23,15 +24,17 @@ export function LeaderboardList({
   rows: LeaderboardRow[];
   highlightAddress?: `0x${string}` | string;
 }) {
+
   return (
     <div className="space-y-2">
       
       {rows.map((row) => {
+         const walletAddress = row.walletAddress ? row.walletAddress : ""
         const isMe =
           highlightAddress &&
-          row.walletAddress.toLowerCase() === String(highlightAddress).toLowerCase();
+          walletAddress.toLowerCase() === String(highlightAddress).toLowerCase();
 
-        const name = row.username || row.fid ? `f/${row.fid}` : shortAddress(row.walletAddress);
+        const name = row.username || row.fid ? `f/${row.fid}` : shortAddress(walletAddress);
         return (
           <Card
             key={`${row.rank}-${row.userId}`}
